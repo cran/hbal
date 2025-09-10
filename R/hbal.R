@@ -369,13 +369,19 @@ hbal <- function(
 
 	# penalty on specific terms
 	if (!is.null(term.alpha)){
-		penalty.names <- names(term.alpha)
+	  if (expand.degree > 1) {
+	    warning("\"term.alpha\ does not work with feature expansion; ignored.")
+	    term.alpha <- NULL
+	  }
+	}
+	if (!is.null(term.alpha)){
+	 	penalty.names <- names(term.alpha)
 		if (length(match(penalty.names, colnames(X)))==0) {
 			if (print.level >= 1) message("Invalid variable name(s); \"term.alpha\" is ignored\n")
 			penalty.names <- penalty.val <- penalty.pos <- NULL
 		} else {
 			penalty.val <- term.alpha
-			penalty.pos <- match(penalty.names, colnames(X))+1
+			penalty.pos <- match(penalty.names, old_names)+1
 		}		
 	}else{
 		penalty.names <- penalty.val <- penalty.pos <- NULL
@@ -512,7 +518,8 @@ hbal <- function(
 	# apply individual penalty values for specific terms
 	if (!is.null(penalty.pos)) { # fill in specific alpha for individual terms
 		alpha[penalty.pos] <- penalty.val
-	}		
+	}
+	alpha[1]  <- 0 # normalizing term should not have penalty		
 
 	##################
 	# Main Algorithm
@@ -550,7 +557,7 @@ hbal <- function(
 	alpha <- alpha[-1]
 	Covar <- colnames(X.sav)
 	#rename the covar
-	for(i in 1:length(new_names)) Covar <- stringr::str_replace_all(Covar, new_names[i], str_trunc(old_names[i], 5, side="right", ellipsis=""))
+	for(i in 1:length(new_names)) Covar <- stringr::str_replace_all(Covar, paste0("\\b",new_names[i], "\\b"), str_trunc(old_names[i], 5, side="right", ellipsis=""))
 	Covar_nonum <- Covar
 	Covar <- paste(Covar, seq_along(Covar), sep = ".")
 	colnames(X.sav) <- Covar
